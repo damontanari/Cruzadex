@@ -18,52 +18,57 @@ def converter_tipos(df):
 
 # Configurações da página
 st.set_page_config(page_title="Cruzadex", layout="wide")
-st.title("🔗 Cruzadex – A ponte entre suas planilhas e a produtividade.")
+st.title("🔗 **Cruzadex** – A ponte entre suas planilhas e a produtividade.")
 
-# Instruções para o usuário
-with st.expander("ℹ️ Instruções para uso"):
+# Instruções
+with st.expander("📘 Como usar o Cruzadex"):
     st.markdown("""
-    - ✅ Envie um ou mais arquivos `.xlsx` contendo uma ou mais abas cada.
-    - 🧩 **A coluna usada como chave para cruzamento deve ter exatamente o mesmo nome em todas as abas e arquivos.**
-    - 💡 Exemplo de chave: `codigo_produto`, `id_cliente`, etc.
-    - 📌 Após digitar o nome da chave, você poderá escolher quais colunas deseja trazer de cada aba.
-    - ⚠️ Se uma aba não tiver a coluna-chave exata, ela será ignorada no cruzamento.
-    - 📥 Ao final, você poderá baixar o arquivo Excel com os dados cruzados.
+    ### 🛠️ Passo a passo para usar o Cruzadex:
+
+    - 📂 **Envie um ou mais arquivos** `.xlsx` com **uma ou mais abas** cada.
+    - 🔑 **Informe a coluna-chave** para o cruzamento dos dados (ex: `codigo_produto`, `id_cliente`).
+    - ⚠️ **Atenção!** O nome da coluna-chave **deve estar igual** em todas as abas/arquivos.
+    - 📌 **Escolha as colunas** que deseja trazer de cada aba (além da chave).
+    - 👀 Veja uma **prévia das colunas e dados** antes de cruzar.
+    - 🚀 Clique em **“Cruzar Dados”** para iniciar a mágica!
+    - 📥 **Baixe o resultado final** em formato Excel com os dados cruzados!
+
+    ---
+    💡 **Dica:** Quanto mais organizada sua planilha estiver, melhor será o resultado!
     """)
 
-# Upload de múltiplos arquivos Excel
+
+# Upload
 uploaded_files = st.file_uploader(
-    "📤 Envie um ou mais arquivos Excel com várias abas",
+    "📤 Envie um ou mais arquivos Excel",
     type=["xlsx"],
     accept_multiple_files=True
 )
 
-# Quando os arquivos forem enviados
 if uploaded_files:
     abas = {}
     nomes_abas = []
 
-    # Lê as abas de todos os arquivos enviados
     for uploaded_file in uploaded_files:
         abas[uploaded_file.name] = pd.read_excel(uploaded_file, sheet_name=None)
         nomes_abas.extend(list(abas[uploaded_file.name].keys()))
     
-    nomes_abas = sorted(set(nomes_abas))  # Remove abas duplicadas
+    nomes_abas = sorted(set(nomes_abas))
     st.success(f"✅ {len(nomes_abas)} abas encontradas em {len(uploaded_files)} arquivos.")
 
-    # Exibe uma prévia das colunas de cada aba de cada arquivo
-    st.subheader("👀 Prévia das colunas de cada aba:")
+    # Prévia visual das abas
+    st.subheader("👁️ Pré-visualização das abas e colunas")
     for nome_arquivo, abas_arquivo in abas.items():
-        st.write(f"📂 **Arquivo**: {nome_arquivo}")
-        for nome_aba, df in abas_arquivo.items():
-            st.write(f"📊 **{nome_aba}**:")
-            st.write(df.columns.tolist())
+        with st.expander(f"📂 Arquivo: `{nome_arquivo}`"):
+            for nome_aba, df in abas_arquivo.items():
+                st.markdown(f"🔹 **Aba:** `{nome_aba}` | **{df.shape[0]} linhas**")
+                st.code(', '.join(df.columns.tolist()), language='markdown')
+                st.dataframe(df.head(5), use_container_width=True)
 
-    # Solicita a coluna-chave para cruzamento
-    coluna_chave = st.text_input("🧩 Digite a coluna para cruzamento (ex: codigo_produto)")
+    # Coluna-chave
+    coluna_chave = st.text_input("🔑 Qual o nome da coluna-chave para cruzar os dados?")
 
     if coluna_chave:
-        # Coleta todas as colunas disponíveis em todas as abas
         colunas_disponiveis = set()
         for abas_arquivo in abas.values():
             for df in abas_arquivo.values():
@@ -72,15 +77,13 @@ if uploaded_files:
 
         colunas_disponiveis = sorted(list(colunas_disponiveis))
 
-        # Seleção de colunas a serem trazidas no cruzamento
-        st.subheader("📌 Escolha quais colunas deseja trazer das outras abas:")
+        st.subheader("📌 Selecione as colunas para cruzar (exceto a chave)")
         colunas_escolhidas_globais = st.multiselect(
-            "Selecione as colunas que quer trazer de cada aba (exceto a chave)",
+            "Colunas disponíveis:",
             options=[col for col in colunas_disponiveis if col != coluna_chave],
             default=["valor"] if "valor" in colunas_disponiveis else []
         )
 
-        # Botão para cruzar os dados
         if st.button("🚀 Cruzar Dados"):
             resultado = None
             for nome_arquivo, abas_arquivo in abas.items():
@@ -89,12 +92,10 @@ if uploaded_files:
                         continue
 
                     df = converter_tipos(df)
-
                     colunas_validas = [col for col in colunas_escolhidas_globais if col in df.columns]
                     colunas_para_usar = [coluna_chave] + colunas_validas
                     df = df[colunas_para_usar]
 
-                    # Renomeia colunas para evitar conflitos
                     df = df.rename(columns={
                         col: f"{col}_{nome_aba}_{nome_arquivo}" if col != coluna_chave else col
                         for col in df.columns
@@ -105,10 +106,9 @@ if uploaded_files:
                     else:
                         resultado = resultado.merge(df, on=coluna_chave, how="outer")
 
-            # Exibe e exporta resultado
             if resultado is not None and not resultado.empty:
-                st.success("✅ Cruzamento realizado com sucesso!")
-                st.dataframe(resultado)
+                st.success("✅ Dados cruzados com sucesso!")
+                st.dataframe(resultado, use_container_width=True)
 
                 output = BytesIO()
                 resultado.to_excel(output, index=False, engine="openpyxl")
@@ -119,4 +119,4 @@ if uploaded_files:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
-                st.warning("⚠️ Não foi possível cruzar. Verifique se todas as abas contêm a coluna-chave.")
+                st.warning("⚠️ Nenhuma aba válida para cruzamento encontrada.")
