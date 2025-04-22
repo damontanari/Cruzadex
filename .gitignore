@@ -1,0 +1,34 @@
+# Ignorar arquivos de configuração do IDE
+.vscode/
+.idea/
+
+# Ignorar arquivos de compilação
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Ignorar ambientes virtuais
+venv/
+env/
+
+# Ignorar arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignorar arquivos temporários
+*.log
+*.tmp
+
+# Ignorar pastas específicas
+/data/
+/backup/
+
+# Ignorar arquivos de banco de dados
+*.sqlite3
+
+# Ignorar chaves e tokens (arquivo de configuração com senhas, etc.)
+config.py
+
+# Ignorar arquivos específicos do sistema operacional
+*.swp
