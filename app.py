@@ -21,21 +21,29 @@ def converter_tipos(df):
 st.set_page_config(page_title="Cruzador de Planilhas", layout="wide")
 st.title("🔗 Cruzadex – A ponte entre suas planilhas e a produtividade.")
 
-# Upload do arquivo Excel
-uploaded_file = st.file_uploader("📤 Envie um arquivo Excel com várias abas", type=["xlsx"])
+# Upload de múltiplos arquivos Excel
+uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos Excel com várias abas", type=["xlsx"], accept_multiple_files=True)
 
-# Quando o arquivo for enviado
-if uploaded_file:
-    # Lê as abas do Excel
-    abas = pd.read_excel(uploaded_file, sheet_name=None)
-    nomes_abas = list(abas.keys())
-    st.success(f"✅ {len(nomes_abas)} abas encontradas.")
+# Quando os arquivos forem enviados
+if uploaded_files:
+    abas = {}
+    nomes_abas = []
 
-    # Exibe uma prévia das colunas de cada aba
+    # Lê as abas de todos os arquivos enviados
+    for uploaded_file in uploaded_files:
+        abas[uploaded_file.name] = pd.read_excel(uploaded_file, sheet_name=None)
+        nomes_abas.extend(list(abas[uploaded_file.name].keys()))
+    
+    nomes_abas = sorted(set(nomes_abas))  # Remover abas duplicadas
+    st.success(f"✅ {len(nomes_abas)} abas encontradas em {len(uploaded_files)} arquivos.")
+
+    # Exibe uma prévia das colunas de cada aba de cada arquivo
     st.subheader("👀 Prévia das colunas de cada aba:")
-    for nome_aba, df in abas.items():
-        st.write(f"📊 **{nome_aba}**:")
-        st.write(df.columns.tolist())  # Exibe as colunas da aba
+    for nome_arquivo, abas_arquivo in abas.items():
+        st.write(f"📂 **Arquivo**: {nome_arquivo}")
+        for nome_aba, df in abas_arquivo.items():
+            st.write(f"📊 **{nome_aba}**:")
+            st.write(df.columns.tolist())  # Exibe as colunas da aba
 
     # Solicita a coluna-chave para cruzamento
     coluna_chave = st.text_input("🧩 Digite a coluna para cruzamento (ex: codigo_produto)")
@@ -43,10 +51,11 @@ if uploaded_file:
     if coluna_chave:
         # Coleta todas as colunas disponíveis em todas as abas
         colunas_disponiveis = set()
-        for df in abas.values():
-            # Converte os tipos das colunas de cada aba
-            df = converter_tipos(df)
-            colunas_disponiveis.update(df.columns)
+        for abas_arquivo in abas.values():
+            for df in abas_arquivo.values():
+                # Converte os tipos das colunas de cada aba
+                df = converter_tipos(df)
+                colunas_disponiveis.update(df.columns)
 
         colunas_disponiveis = sorted(list(colunas_disponiveis))
 
@@ -61,28 +70,29 @@ if uploaded_file:
         # Botão para realizar o cruzamento
         if st.button("🚀 Cruzar Dados"):
             resultado = None
-            # Itera pelas abas para fazer o cruzamento
-            for nome_aba, df in abas.items():
-                if coluna_chave not in df.columns:
-                    continue
+            # Itera pelos arquivos e suas abas para fazer o cruzamento
+            for nome_arquivo, abas_arquivo in abas.items():
+                for nome_aba, df in abas_arquivo.items():
+                    if coluna_chave not in df.columns:
+                        continue
 
-                # Converte os tipos de dados para a aba atual
-                df = converter_tipos(df)
+                    # Converte os tipos de dados para a aba atual
+                    df = converter_tipos(df)
 
-                # Filtra as colunas que o usuário escolheu
-                colunas_validas = [col for col in colunas_escolhidas_globais if col in df.columns]
-                colunas_para_usar = [coluna_chave] + colunas_validas
-                df = df[colunas_para_usar]
+                    # Filtra as colunas que o usuário escolheu
+                    colunas_validas = [col for col in colunas_escolhidas_globais if col in df.columns]
+                    colunas_para_usar = [coluna_chave] + colunas_validas
+                    df = df[colunas_para_usar]
 
-                # Renomeia as colunas para identificar de qual aba vem
-                df = df.rename(columns={col: f"{col}_{nome_aba}" if col != coluna_chave else col
-                                        for col in df.columns})
+                    # Renomeia as colunas para identificar de qual aba e arquivo vem
+                    df = df.rename(columns={col: f"{col}_{nome_aba}_{nome_arquivo}" if col != coluna_chave else col
+                                            for col in df.columns})
 
-                # Faz o merge com o resultado acumulado
-                if resultado is None:
-                    resultado = df
-                else:
-                    resultado = resultado.merge(df, on=coluna_chave, how="outer")
+                    # Faz o merge com o resultado acumulado
+                    if resultado is None:
+                        resultado = df
+                    else:
+                        resultado = resultado.merge(df, on=coluna_chave, how="outer")
 
             # Exibe o resultado e permite o download
             if resultado is not None and not resultado.empty:
