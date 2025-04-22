@@ -56,7 +56,7 @@ if uploaded_files:
     for uploaded_file in uploaded_files:
         abas[uploaded_file.name] = ler_excel(uploaded_file)
         nomes_abas.extend(list(abas[uploaded_file.name].keys()))
-    
+
     nomes_abas = sorted(set(nomes_abas))
     st.success(f"✅ {len(nomes_abas)} abas encontradas em {len(uploaded_files)} arquivos.")
 
@@ -72,6 +72,17 @@ if uploaded_files:
     # Coluna-chave e tipo de junção
     coluna_chave = st.text_input("🔑 Qual o nome da coluna-chave para cruzar os dados?")
     tipo_juncao = st.selectbox("🔀 Tipo de junção:", ["outer", "inner", "left", "right"])
+
+    # Explicação dos tipos de junção
+    with st.expander("ℹ️ Entenda os tipos de junção"):
+        st.markdown("""
+        - 🔄 **Inner Join:** Retorna apenas os registros que possuem correspondência na coluna-chave em todas as abas.
+        - ➡️ **Left Join:** Mantém todos os registros da primeira aba e adiciona os dados correspondentes das demais.
+        - ⬅️ **Right Join:** Mantém todos os registros da aba atual (que está sendo cruzada) e adiciona os dados da anterior.
+        - 🌐 **Outer Join:** Retorna todos os registros de todas as abas, preenchendo com `NaN` onde não houver correspondência.
+
+        **Dica:** Se não tiver certeza, use `outer` — ele garante que nada será perdido.
+        """)
 
     if coluna_chave:
         colunas_disponiveis = set()
