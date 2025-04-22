@@ -17,7 +17,7 @@ def converter_tipos(df):
     return df
 
 # Configurações da página
-st.set_page_config(page_title="Cruzador de Planilhas", layout="wide")
+st.set_page_config(page_title="Cruzadex", layout="wide")
 st.title("🔗 Cruzadex – A ponte entre suas planilhas e a produtividade.")
 
 # Instruções para o usuário
