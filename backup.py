@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-from graficos import gerar_graficos
 
 # Função para converter tipos apenas onde faz sentido
 def converter_tipos(df):
@@ -30,7 +29,7 @@ st.title("🔗 **Cruzadex** – A ponte entre suas planilhas e a produtividade."
 with st.expander("📘 Como usar o Cruzadex"):
     st.markdown("""
     ### 🛠️ Passo a passo para usar o Cruzadex:
-    
+
     - 📂 **Envie um ou mais arquivos** `.xlsx` com **uma ou mais abas** cada.
     - 🔑 **Informe a coluna-chave** para o cruzamento dos dados (ex: `codigo_produto`, `id_cliente`).
     - 📌 **Escolha as colunas** que deseja trazer de cada aba (além da chave).
@@ -38,12 +37,12 @@ with st.expander("📘 Como usar o Cruzadex"):
     - 👀 Veja uma **prévia das colunas, tipos e dados** antes de cruzar.
     - 🚀 Clique em **“Cruzar Dados”** para iniciar a mágica!
     - 📥 **Baixe o resultado final** em Excel com os dados cruzados!
-    
+
     ---
     💡 **Dica:** Quanto mais organizada sua planilha estiver, melhor será o resultado!
     """)
 
-# Upload de arquivos
+# Upload
 uploaded_files = st.file_uploader(
     "📤 Envie um ou mais arquivos Excel",
     type=["xlsx"],
@@ -57,7 +56,7 @@ if uploaded_files:
     for uploaded_file in uploaded_files:
         abas[uploaded_file.name] = ler_excel(uploaded_file)
         nomes_abas.extend(list(abas[uploaded_file.name].keys()))
-
+    
     nomes_abas = sorted(set(nomes_abas))
     st.success(f"✅ {len(nomes_abas)} abas encontradas em {len(uploaded_files)} arquivos.")
 
@@ -74,17 +73,6 @@ if uploaded_files:
     coluna_chave = st.text_input("🔑 Qual o nome da coluna-chave para cruzar os dados?")
     tipo_juncao = st.selectbox("🔀 Tipo de junção:", ["outer", "inner", "left", "right"])
 
-    # Explicação dos tipos de junção
-    with st.expander("ℹ️ Entenda os tipos de junção"):
-        st.markdown("""
-        - 🔄 **Inner Join:** Retorna apenas os registros que possuem correspondência na coluna-chave em todas as abas.
-        - ➡️ **Left Join:** Mantém todos os registros da primeira aba e adiciona os dados correspondentes das demais.
-        - ⬅️ **Right Join:** Mantém todos os registros da aba atual (que está sendo cruzada) e adiciona os dados da anterior.
-        - 🌐 **Outer Join:** Retorna todos os registros de todas as abas, preenchendo com `NaN` onde não houver correspondência.
-
-        **Dica:** Se não tiver certeza, use `outer` — ele garante que nada será perdido.
-        """)
-
     if coluna_chave:
         colunas_disponiveis = set()
         for abas_arquivo in abas.values():
@@ -98,9 +86,6 @@ if uploaded_files:
             options=[col for col in colunas_disponiveis if col != coluna_chave],
             default=["valor"] if "valor" in colunas_disponiveis else []
         )
-
-        # Seleção do tamanho dos gráficos
-        tamanho_grafico = st.selectbox("📊 Qual o tamanho dos gráficos?", ["small", "medium", "large"])
 
         if st.button("🚀 Cruzar Dados"):
             resultado = None
@@ -132,15 +117,10 @@ if uploaded_files:
                 st.success("✅ Dados cruzados com sucesso!")
                 st.dataframe(resultado, use_container_width=True)
 
-                # Gerar gráficos com a função importada
-                st.subheader("📊 Gráficos Gerados")
-                gerar_graficos(resultado, tamanho=tamanho_grafico)
-
                 # Histórico de cruzamento
                 st.markdown("📝 **Histórico das abas cruzadas:**")
                 st.write(log_abas)
 
-                # Opção de download
                 output = BytesIO()
                 resultado.to_excel(output, index=False, engine="openpyxl")
                 st.download_button(
