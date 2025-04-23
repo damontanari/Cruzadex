@@ -3,7 +3,7 @@ import seaborn as sns
 import streamlit as st
 import pandas as pd
 
-def gerar_graficos(df, tamanho="medium"):
+def gerar_graficos(df, tamanho="Médio"):
     """
     Função que gera gráficos com base nas colunas do DataFrame.
     Adaptado para diferentes tipos de dados e cruzamentos.
@@ -13,9 +13,9 @@ def gerar_graficos(df, tamanho="medium"):
     sns.set(style="whitegrid")
 
     # Ajustar o tamanho do gráfico conforme o parâmetro 'tamanho'
-    if tamanho == "small":
+    if tamanho == "Pequeno":
         fig_size = (6, 4)  # Gráficos menores
-    elif tamanho == "large":
+    elif tamanho == "Grande":
         fig_size = (12, 7)  # Gráficos maiores
     else:
         fig_size = (8, 5)  # Tamanho médio padrão
